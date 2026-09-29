@@ -1,0 +1,84 @@
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# -----------------------------
+# Virtual environments
+# -----------------------------
+.venv/
+.venv-wsl/
+venv/
+env/
+
+# -----------------------------
+# Local environment / secrets
+# -----------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.aws/
+
+# -----------------------------
+# TransitFlow generated data
+# -----------------------------
+data/raw/
+data/curated/
+data/quarantine/
+data/metrics/
+
+# Keep directory structure if placeholder files are added later
+!data/raw/.gitkeep
+!data/curated/.gitkeep
+!data/quarantine/.gitkeep
+!data/metrics/.gitkeep
+
+# -----------------------------
+# Spark / Hadoop
+# -----------------------------
+spark-warehouse/
+metastore_db/
+derby.log
+*.crc
+_SUCCESS
+
+# -----------------------------
+# Java
+# -----------------------------
+*.class
+hs_err_pid*
+
+# -----------------------------
+# OS / editors
+# -----------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# -----------------------------
+# Logs / temporary files
+# -----------------------------
+*.log
+*.tmp
+*.temp
+*.part
+
+# -----------------------------
+# Jupyter
+# -----------------------------
+.ipynb_checkpoints/
+
+# -----------------------------
+# Build artifacts
+# -----------------------------
+build/
+dist/
+*.egg-info/
