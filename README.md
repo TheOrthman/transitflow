@@ -489,21 +489,21 @@ Planned additions include:
 
 ## Live Demo
 
-> **Coming soon**
+TransitFlow is publicly available here:
 
-A read-only public TransitFlow application will allow recruiters and reviewers to inspect:
+**[Open TransitFlow](https://transitflowz.streamlit.app/)**
 
-- pipeline architecture
+The read-only demo allows reviewers to inspect:
+
 - monthly processing results
-- data-quality metrics
-- warning and quarantine distributions
-- sample curated records
-- reconciliation results
-- engineering design decisions
+- valid, warning, and quarantine record counts
+- data-quality rules
+- Spark-to-Athena reconciliation
+- reliability and idempotency controls
+- technology stack
+- automated testing status
 
-The application will expose pipeline outputs without exposing administrative AWS infrastructure.
-
----
+The public application does not expose AWS credentials, administrative cloud access, or unrestricted infrastructure permissions.
 
 ## Engineering Goals
 
@@ -553,10 +553,10 @@ Current milestone:
 ✅ Jan–Aug 2025 reconciliation
 ✅ Unit testing — 28 passing tests
 ✅ Git/GitHub repository
-⬜ Integration tests
-⬜ Continuous Integration
-⬜ Recruiter-facing live application
-⬜ Public deployment
+✅ Integration tests
+✅ Continuous Integration
+✅ Recruiter-facing live application
+✅ Public deployment
 ```
 
 
