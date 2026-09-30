@@ -2,12 +2,25 @@
 
 [![CI](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml/badge.svg)](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml)
 
+[![CI](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml/badge.svg)](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-red)](https://transitflowz.streamlit.app/)
+[![Python](https://img.shields.io/badge/Python-3.13%2B-blue)](https://www.python.org/)
+[![PySpark](https://img.shields.io/badge/Processing-PySpark-orange)](https://spark.apache.org/)
+
 **Live Demo:** [Open TransitFlow](https://transitflowz.streamlit.app/)
 > A production-style batch data engineering platform for ingesting, validating, transforming, publishing, cataloging, and querying NYC taxi trip data using PySpark and AWS.
 
 TransitFlow demonstrates the design of a reliable data pipeline rather than a simple analytics notebook. It processes public NYC Taxi & Limousine Commission (TLC) trip data through a layered pipeline with schema validation, record-level data quality controls, quarantine handling, checksum-based idempotency, S3 publication verification, AWS Glue partition management, and Athena reconciliation.
 
 The current implementation processes NYC Yellow Taxi data from **January through August 2025**.
+
+## Live Demo
+
+**[Open TransitFlow](https://transitflowz.streamlit.app/)**
+
+TransitFlow includes a public read-only verification dashboard where reviewers can inspect pipeline outputs, data-quality metrics, reconciliation results, and engineering controls.
+
+![TransitFlow Overview](docs/screenshots/overview.png)
 
 ---
 
@@ -28,6 +41,28 @@ The current implementation processes NYC Yellow Taxi data from **January through
 - Reconciles local Spark output with Athena record counts
 - Includes **28 passing unit tests**
 - Designed for a public read-only recruiter demo
+
+---
+
+## What This Project Demonstrates
+
+TransitFlow is designed to demonstrate practical data engineering concerns beyond basic ETL.
+
+It includes:
+
+- distributed batch processing with PySpark
+- schema validation and canonicalization
+- record-level warning and quarantine handling
+- SHA-256 source verification
+- processing idempotency
+- S3 publication verification
+- Hive-style partitioned storage
+- AWS Glue metadata management
+- incorrect partition repair
+- Amazon Athena reconciliation
+- unit and integration testing
+- automated CI with GitHub Actions
+- public read-only deployment
 
 ---
 
@@ -59,6 +94,25 @@ flowchart LR
     O --> P[Reconciliation / Analytics]
     P --> Q[Recruiter Demo - Planned]
 ```
+
+---
+
+## Demo Screenshots
+
+### Pipeline Overview
+
+![TransitFlow Overview](docs/screenshots/overview.png)
+
+### Data Quality
+
+![TransitFlow Data Quality](docs/screenshots/data_quality.png)
+
+### Spark-to-Athena Reconciliation
+
+![TransitFlow Reconciliation](docs/screenshots/reconciliation.png)
+
+**Live application:**  
+[https://transitflowz.streamlit.app/](https://transitflowz.streamlit.app/)
 
 ---
 
