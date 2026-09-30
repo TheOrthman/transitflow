@@ -1,5 +1,8 @@
 # TransitFlow
 
+[![CI](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml/badge.svg)](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml)
+
+**Live Demo:** [Open TransitFlow](https://transitflowz.streamlit.app/)
 > A production-style batch data engineering platform for ingesting, validating, transforming, publishing, cataloging, and querying NYC taxi trip data using PySpark and AWS.
 
 TransitFlow demonstrates the design of a reliable data pipeline rather than a simple analytics notebook. It processes public NYC Taxi & Limousine Commission (TLC) trip data through a layered pipeline with schema validation, record-level data quality controls, quarantine handling, checksum-based idempotency, S3 publication verification, AWS Glue partition management, and Athena reconciliation.
