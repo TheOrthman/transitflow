@@ -1,76 +1,85 @@
 # TransitFlow
 
 [![CI](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml/badge.svg)](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml)
-
-[![CI](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml/badge.svg)](https://github.com/TheOrthman/transitflow/actions/workflows/tests.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-red)](https://transitflowz.streamlit.app/)
 [![Python](https://img.shields.io/badge/Python-3.13%2B-blue)](https://www.python.org/)
 [![PySpark](https://img.shields.io/badge/Processing-PySpark-orange)](https://spark.apache.org/)
 
 **Live Demo:** [Open TransitFlow](https://transitflowz.streamlit.app/)
-> A production-style batch data engineering platform for ingesting, validating, transforming, publishing, cataloging, and querying NYC taxi trip data using PySpark and AWS.
 
-TransitFlow demonstrates the design of a reliable data pipeline rather than a simple analytics notebook. It processes public NYC Taxi & Limousine Commission (TLC) trip data through a layered pipeline with schema validation, record-level data quality controls, quarantine handling, checksum-based idempotency, S3 publication verification, AWS Glue partition management, and Athena reconciliation.
+> A production-style batch data engineering platform built with PySpark and AWS for reliable ingestion, validation, data-quality enforcement, cloud publication, metadata management, and analytical reconciliation of NYC taxi trip data.
 
-The current implementation processes NYC Yellow Taxi data from **January through August 2025**.
+TransitFlow processes **31M+ NYC Yellow Taxi records** across eight monthly batches and focuses on practical data-platform concerns such as schema validation, warning and quarantine handling, checksum-based idempotency, S3 publication verification, AWS Glue partition repair, Amazon Athena reconciliation, automated testing, CI, and public verification.
+
+---
+
+## At a Glance
+
+- **31M+ records processed**
+- **8 monthly batches**
+- **28 unit tests**
+- **1 Spark integration test**
+- **6 dashboard data validation tests**
+- **35 total automated tests**
+- **GitHub Actions CI**
+- **Public Streamlit deployment**
+- **Spark-to-Athena reconciliation**
+- **Three independent idempotency layers**
+
+---
 
 ## Live Demo
 
-**[Open TransitFlow](https://transitflowz.streamlit.app/)**
+TransitFlow includes a public read-only dashboard where recruiters and reviewers can inspect pipeline outputs and engineering controls.
 
-TransitFlow includes a public read-only verification dashboard where reviewers can inspect pipeline outputs, data-quality metrics, reconciliation results, and engineering controls.
+**[Open the live TransitFlow application](https://transitflowz.streamlit.app/)**
+
+The demo exposes:
+
+- monthly batch processing results
+- valid, warning, and quarantine counts
+- data-quality rules
+- Spark-to-Athena reconciliation
+- idempotency and reliability controls
+- technology stack
+- automated testing status
+
+The application does **not** expose AWS credentials, administrative cloud access, unrestricted Athena access, or infrastructure permissions.
 
 ![TransitFlow Overview](docs/screenshots/overview.png)
 
 ---
 
-## Project Highlights
+## What TransitFlow Demonstrates
 
-- Processes millions of NYC Yellow Taxi records with **PySpark**
-- Downloads source Parquet files with retry and atomic-write protection
-- Validates required source schema before processing
-- Separates records into **VALID**, **WARNING**, and **QUARANTINE**
-- Preserves data-quality reasons at record level
-- Generates batch-level quality metrics
-- Uses SHA-256 checksums for source-file verification
-- Implements processing and publication idempotency
-- Publishes raw, curated, quarantine, and metrics layers to **Amazon S3**
-- Stores curated data using Hive-style partitions
-- Registers and repairs partitions in **AWS Glue Data Catalog**
-- Queries curated datasets through **Amazon Athena**
-- Reconciles local Spark output with Athena record counts
-- Includes **28 passing unit tests**
-- Designed for a public read-only recruiter demo
+TransitFlow is designed to go beyond a basic ETL script or analytics notebook.
 
----
-
-## What This Project Demonstrates
-
-TransitFlow is designed to demonstrate practical data engineering concerns beyond basic ETL.
-
-It includes:
+It demonstrates:
 
 - distributed batch processing with PySpark
-- schema validation and canonicalization
-- record-level warning and quarantine handling
+- resilient source ingestion
+- canonical schema normalization
+- source-schema validation
+- record-level data-quality classification
+- warning and quarantine handling
 - SHA-256 source verification
 - processing idempotency
-- S3 publication verification
-- Hive-style partitioned storage
-- AWS Glue metadata management
-- incorrect partition repair
-- Amazon Athena reconciliation
+- S3 publication idempotency
+- Hive-style partitioning
+- AWS Glue partition registration and repair
+- Amazon Athena querying
+- Spark-to-Athena reconciliation
 - unit and integration testing
-- automated CI with GitHub Actions
+- CI with GitHub Actions
 - public read-only deployment
 
 ---
 
-## Architecture
+# Architecture
 
 ```mermaid
 flowchart LR
-    A[NYC TLC Public Dataset] --> B[Downloader]
+    A[NYC TLC Public Dataset] --> B[TLC Downloader]
 
     B --> C[Local Raw Parquet]
 
@@ -91,9 +100,11 @@ flowchart LR
     K --> N[AWS Glue Data Catalog]
     N --> O[Amazon Athena]
 
-    O --> P[Reconciliation / Analytics]
-    P --> Q[Recruiter Demo - Planned]
+    O --> P[Reconciliation]
+    P --> Q[Public Streamlit Demo]
 ```
+
+The pipeline separates processing, publication, metadata registration, and query verification so that failures in one layer can be detected and repaired independently.
 
 ---
 
@@ -116,7 +127,7 @@ flowchart LR
 
 ---
 
-## Technology Stack
+# Technology Stack
 
 | Layer | Technology |
 |---|---|
@@ -129,22 +140,23 @@ flowchart LR
 | Query Engine | Amazon Athena |
 | AWS Authentication | IAM Identity Center / SSO |
 | Testing | pytest |
+| CI | GitHub Actions |
 | Version Control | Git / GitHub |
-| Local Runtime | WSL2 / Linux |
-| Demo Layer | Streamlit (planned) |
+| Local Runtime | Linux / WSL2 |
+| Demo Layer | Streamlit |
 
 ---
 
-## Dataset
+# Dataset
 
-TransitFlow currently uses the public **NYC TLC Yellow Taxi Trip Records** dataset.
+TransitFlow currently processes the public **NYC Taxi & Limousine Commission Yellow Taxi Trip Records** dataset.
 
 Each monthly batch contains fields such as:
 
 - pickup and dropoff timestamps
 - pickup and dropoff location IDs
-- trip distance
 - passenger count
+- trip distance
 - payment type
 - fare amount
 - tip amount
@@ -152,9 +164,9 @@ Each monthly batch contains fields such as:
 - taxes and surcharges
 - total amount
 
-TransitFlow normalizes the source naming convention into a canonical snake_case schema before downstream processing.
+The pipeline normalizes source column names into a canonical snake_case schema.
 
-Example:
+Examples:
 
 ```text
 VendorID                  -> vendor_id
@@ -163,17 +175,19 @@ tpep_dropoff_datetime     -> dropoff_datetime
 PULocationID              -> pickup_location_id
 DOLocationID              -> dropoff_location_id
 RatecodeID                -> rate_code_id
+store_and_fwd_flag        -> store_and_forward_flag
+Airport_fee               -> airport_fee
 ```
 
 ---
 
-## Data Quality Architecture
+# Data Quality Architecture
 
-TransitFlow intentionally distinguishes between records that are unusable and records that are unusual but potentially legitimate.
+TransitFlow distinguishes between records that are unusable for normal analytics and records that are unusual but may still represent legitimate source-system behavior.
 
-### Quarantine Rules
+## Quarantine Rules
 
-Records are quarantined when they contain conditions that make them unsafe for normal analytical use.
+Records are quarantined when they contain conditions that make them unsafe for standard analytical use.
 
 Current quarantine reasons include:
 
@@ -186,7 +200,7 @@ MISSING_PICKUP_LOCATION
 MISSING_DROPOFF_LOCATION
 ```
 
-### Warning Rules
+## Warning Rules
 
 Warning records remain in the curated dataset while preserving their quality flags.
 
@@ -199,11 +213,11 @@ NEGATIVE_TOTAL_AMOUNT
 TRIP_OVER_24_HOURS
 ```
 
-Negative fare and total amounts are treated as warnings rather than automatically discarded because they may represent corrections, reversals, or other source-system behavior.
+Negative fare and total amounts are treated as warnings rather than automatically discarded because they may represent corrections, reversals, refunds, or other source-system behavior.
 
-### Validation Status
+## Validation Status
 
-Each row receives one of:
+Every processed row receives one of:
 
 ```text
 VALID
@@ -211,11 +225,13 @@ WARNING
 QUARANTINE
 ```
 
-If a row contains both warning and quarantine conditions, `QUARANTINE` takes precedence while all applicable reasons remain attached to the record.
+If both warning and quarantine conditions exist, `QUARANTINE` takes precedence while all applicable quality reasons remain attached to the record.
+
+This avoids silently discarding unusual data while still protecting downstream analytical quality.
 
 ---
 
-## Lineage Metadata
+# Lineage Metadata
 
 TransitFlow enriches processed records with operational metadata:
 
@@ -229,13 +245,13 @@ quarantine_reasons
 warning_reasons
 ```
 
-This makes individual records traceable back to their source batch and validation result.
+This allows processed records to be traced back to their source batch and validation outcome.
 
 ---
 
-## S3 Data Layout
+# S3 Data Layout
 
-TransitFlow separates pipeline outputs by responsibility.
+TransitFlow separates cloud outputs by responsibility.
 
 ```text
 s3://<bucket>/
@@ -245,12 +261,11 @@ s3://<bucket>/
 │
 ├── curated/
 │   └── yellow_taxi/
-│       ├── year=2025/
-│       │   ├── month=01/
-│       │   ├── month=02/
-│       │   └── ...
-│       │
-│       └── ...
+│       └── year=2025/
+│           ├── month=01/
+│           ├── month=02/
+│           ├── ...
+│           └── month=08/
 │
 ├── quarantine/
 │   └── yellow_taxi/
@@ -263,13 +278,13 @@ s3://<bucket>/
 └── athena-results/
 ```
 
-Curated data uses **Hive-style partitioning**:
+The curated layer uses **Hive-style partitioning**:
 
 ```text
 year=YYYY/month=MM
 ```
 
-For example:
+Example:
 
 ```text
 curated/yellow_taxi/year=2025/month=08/
@@ -277,15 +292,15 @@ curated/yellow_taxi/year=2025/month=08/
 
 ---
 
-## Idempotency
+# Reliability and Idempotency
 
-One of TransitFlow's core design goals is safe reruns.
+One of TransitFlow's primary engineering goals is to make batch reruns safe.
 
-The platform currently protects processing at multiple layers.
+The platform separates reliability into three independent control layers.
 
-### 1. Processing Idempotency
+## 1. Processing Idempotency
 
-Before Spark processing begins, TransitFlow calculates the SHA-256 checksum of the source file.
+Before Spark processing begins, TransitFlow calculates a SHA-256 checksum of the source file.
 
 The run ledger is checked using:
 
@@ -293,23 +308,31 @@ The run ledger is checked using:
 batch_id + source_checksum + SUCCESS status
 ```
 
-If the same successful source batch has already been processed, expensive Spark processing can be skipped.
+If the same successful source batch has already been processed, the expensive Spark transformation can be skipped.
 
-### 2. S3 Publication Idempotency
+---
 
-TransitFlow verifies that:
+## 2. S3 Publication Idempotency
+
+Processing success does not automatically imply successful publication.
+
+TransitFlow independently verifies that:
 
 - the raw S3 object exists
 - its stored SHA-256 metadata matches the local source checksum
 - curated output contains a `_SUCCESS` marker
 - quarantine output contains a `_SUCCESS` marker
-- metrics output contains a `_SUCCESS` marker
+- quality metrics output contains a `_SUCCESS` marker
 
-This allows missing cloud artifacts to be repaired independently of Spark processing.
+This allows incomplete cloud publication to be repaired without unnecessarily re-running Spark.
 
-### 3. Glue Partition Idempotency
+---
 
-Glue partition registration independently verifies:
+## 3. Glue Partition Idempotency
+
+Glue metadata is verified independently from S3 publication.
+
+TransitFlow validates:
 
 ```text
 partition values
@@ -317,15 +340,28 @@ partition values
 canonical S3 location
 ```
 
+Expected partition values for August 2025:
+
+```text
+year = 2025
+month = 08
+```
+
+Expected location:
+
+```text
+s3://<bucket>/curated/yellow_taxi/year=2025/month=08/
+```
+
 A correct partition is left unchanged.
 
-An incorrect partition can be replaced with the canonical location.
+An incorrect partition can be removed and recreated using the canonical S3 location.
 
-This protects the query layer from silently pointing at the wrong S3 prefix.
+This protects the query layer from silently pointing to the wrong storage prefix.
 
 ---
 
-## Glue and Athena
+# Glue and Athena
 
 The curated dataset is registered in AWS Glue as:
 
@@ -341,18 +377,20 @@ year INT
 month INT
 ```
 
-The physical S3 representation uses zero-padded month directories such as:
+The physical S3 representation uses zero-padded month directories:
 
 ```text
 month=01
+month=02
+...
 month=08
 ```
 
-Athena can therefore query all registered monthly curated partitions without scanning unrelated pipeline layers.
+Amazon Athena queries the Glue-registered curated partitions directly from S3.
 
 ---
 
-## Batch Results
+# Batch Results
 
 TransitFlow currently processes January through August 2025.
 
@@ -367,13 +405,11 @@ TransitFlow currently processes January through August 2025.
 | Jul 2025 | 3,898,963 | 3,898,962 | 1 |
 | Aug 2025 | 3,574,091 | 3,574,089 | 2 |
 
-All eight curated monthly counts were reconciled against Athena after Glue partition registration.
+All eight curated monthly counts were reconciled against Amazon Athena after Glue partition registration.
 
 ---
 
-## Example August Batch
-
-August 2025:
+## Example: August 2025
 
 ```text
 Source records:       3,574,091
@@ -387,23 +423,66 @@ The curated count was independently verified through Athena.
 
 ---
 
-## Testing
+# Spark-to-Athena Reconciliation
 
-TransitFlow currently contains **28 passing unit tests**.
+A successful Spark job alone does not prove that the downstream query layer is correct.
 
-Run the suite with:
+TransitFlow verifies the complete path:
 
-```bash
-python -m pytest tests/unit -v
+```text
+PySpark
+   |
+   v
+Amazon S3
+   |
+   v
+AWS Glue
+   |
+   v
+Amazon Athena
+   |
+   v
+Reconciliation
 ```
 
-Current coverage includes:
+For January through August 2025:
+
+```text
+Spark curated count == Athena count
+```
+
+for every processed monthly partition.
+
+This provides independent verification of:
+
+- Spark transformation output
+- S3 publication
+- Glue metadata registration
+- Athena query visibility
+
+---
+
+# Testing
+
+TransitFlow currently contains **35 passing automated tests**:
+
+- **28 unit tests**
+- **1 Spark integration test**
+- **6 public-demo data validation tests**
+
+Run the full suite:
+
+```bash
+python -m pytest tests/unit tests/integration -v
+```
+
+Current test coverage includes:
 
 - batch configuration
 - source schema validation
 - canonical column normalization
 - SHA-256 checksum generation
-- deterministic checksums
+- checksum determinism
 - data-quality classification
 - warning behavior
 - quarantine behavior
@@ -415,20 +494,62 @@ Current coverage includes:
 - Glue partition existence
 - Glue partition location validation
 - incorrect Glue partition replacement
+- end-to-end local Spark batch execution
+- dashboard metric consistency
+- dashboard Spark-to-Athena reconciliation
 
-The AWS-facing unit tests use mocks, allowing them to run without making real AWS API calls.
+AWS-facing unit tests use mocks, allowing the test suite and GitHub Actions CI to run without requiring live AWS API access.
 
 ---
 
-## Repository Structure
+# Continuous Integration
+
+TransitFlow uses **GitHub Actions** to automatically run its test suite on:
+
+- pushes to `main`
+- pull requests targeting `main`
+
+The CI environment provisions:
+
+- Linux
+- Java 17
+- Python
+- project dependencies
+- pytest
+
+A green CI check verifies that the current repository state passes the automated test suite.
+
+---
+
+# Repository Structure
 
 ```text
 transitflow/
 │
-├── run_batches.py
-├── run_ingestion.py
-├── requirements.txt
-├── README.md
+├── .github/
+│   └── workflows/
+│       └── tests.yml
+│
+├── app/
+│   ├── app.py
+│   └── data/
+│       └── batch_metrics.csv
+│
+├── docs/
+│   ├── architecture/
+│   │   └── transitflow_architecture.md
+│   │
+│   ├── decisions/
+│   │   ├── 001-separate-processing-publication-state.md
+│   │   └── 002-warning-vs-quarantine.md
+│   │
+│   └── screenshots/
+│       ├── overview.png
+│       ├── data_quality.png
+│       └── reconciliation.png
+│
+├── sql/
+│   └── create_curated_yellow_taxi.sql
 │
 ├── src/
 │   ├── common/
@@ -447,6 +568,7 @@ transitflow/
 │   │   └── metrics.py
 │   │
 │   ├── storage/
+│   │   ├── __init__.py
 │   │   ├── batch_publisher.py
 │   │   ├── glue_catalog.py
 │   │   └── s3_storage.py
@@ -459,41 +581,83 @@ transitflow/
 │       ├── rules.py
 │       └── schema.py
 │
-├── sql/
-│   └── create_curated_yellow_taxi.sql
+├── tests/
+│   ├── unit/
+│   │   ├── test_app_data.py
+│   │   ├── test_batch_publisher.py
+│   │   ├── test_cloud_state.py
+│   │   ├── test_config.py
+│   │   ├── test_glue_catalog.py
+│   │   ├── test_quality_rules.py
+│   │   ├── test_run_context.py
+│   │   ├── test_run_ledger.py
+│   │   └── test_schema.py
+│   │
+│   └── integration/
+│       └── test_batch_pipeline.py
 │
-└── tests/
-    └── unit/
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── run_batches.py
+└── run_ingestion.py
 ```
 
-Generated raw data, curated data, quarantine data, metrics, virtual environments, and local Spark artifacts are intentionally excluded from Git.
+Generated raw data, curated data, quarantine data, metrics, virtual environments, temporary files, and local Spark artifacts are intentionally excluded from Git.
 
 ---
 
-## Running Locally
+# Running Locally
 
 TransitFlow is currently developed and tested under Linux using WSL2.
 
-Create and activate a virtual environment:
+## 1. Clone the repository
+
+```bash
+git clone git@github.com:TheOrthman/transitflow.git
+cd transitflow
+```
+
+Alternatively, clone using HTTPS:
+
+```bash
+git clone https://github.com/TheOrthman/transitflow.git
+cd transitflow
+```
+
+## 2. Create a virtual environment
 
 ```bash
 python -m venv .venv-wsl
 source .venv-wsl/bin/activate
 ```
 
-Install dependencies:
+## 3. Install dependencies
 
 ```bash
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Run the unit tests:
+## 4. Run the test suite
 
 ```bash
-python -m pytest tests/unit -v
+python -m pytest tests/unit tests/integration -v
 ```
 
-Run the batch orchestration:
+## 5. Run the Streamlit demo
+
+```bash
+streamlit run app/app.py
+```
+
+Then open:
+
+```text
+http://localhost:8501
+```
+
+## 6. Run batch orchestration
 
 ```bash
 python run_batches.py
@@ -501,80 +665,102 @@ python run_batches.py
 
 AWS publication requires a configured and authorized AWS environment.
 
-The development environment uses AWS IAM Identity Center rather than long-lived access keys.
+The development environment uses AWS IAM Identity Center rather than long-lived AWS access keys.
 
 ---
 
-## Security
+# Security
 
 TransitFlow does not store AWS credentials in the repository.
 
-Local secrets, virtual environments, generated datasets, temporary files, and AWS credential material are excluded through `.gitignore`.
+The project excludes:
 
-The public-facing demo will be read-only and will not expose:
+- AWS credentials
+- local `.env` files
+- private keys
+- virtual environments
+- generated datasets
+- Spark temporary artifacts
+- pipeline metrics
+- local runtime state
+
+The public Streamlit application is read-only and does not expose:
 
 - AWS credentials
 - AWS console access
 - unrestricted Athena access
-- administrative S3 permissions
+- administrative S3 access
 - IAM configuration
+- private infrastructure controls
 
 ---
 
-## Planned Improvements
+# Architecture Decisions
 
-The project is being extended incrementally.
+TransitFlow documents key engineering decisions using Architecture Decision Records.
 
-Planned additions include:
+## ADR 001 — Separate Processing State from Publication State
 
-- integration tests
-- GitHub Actions CI
-- richer pipeline observability
-- architecture decision records
-- automated Athena reconciliation
-- recruiter-facing Streamlit application
-- interactive data-quality dashboard
-- pipeline verification interface
-- performance benchmarking
-- stronger least-privilege AWS permissions
-- optional streaming architecture extension
+Processing success, S3 publication success, and Glue registration success are tracked independently.
+
+This allows cloud publication failures to be repaired without unnecessarily repeating expensive Spark transformations.
+
+See:
+
+```text
+docs/decisions/001-separate-processing-publication-state.md
+```
+
+## ADR 002 — Warning vs Quarantine
+
+TransitFlow distinguishes unusual-but-usable records from records unsafe for standard analytics.
+
+Warning records remain in the curated layer.
+
+Quarantined records are separated for investigation.
+
+See:
+
+```text
+docs/decisions/002-warning-vs-quarantine.md
+```
 
 ---
 
-## Live Demo
+# Engineering Principles
 
-TransitFlow is publicly available here:
+TransitFlow is built around several principles:
 
-**[Open TransitFlow](https://transitflowz.streamlit.app/)**
-
-The read-only demo allows reviewers to inspect:
-
-- monthly processing results
-- valid, warning, and quarantine record counts
-- data-quality rules
-- Spark-to-Athena reconciliation
-- reliability and idempotency controls
-- technology stack
-- automated testing status
-
-The public application does not expose AWS credentials, administrative cloud access, or unrestricted infrastructure permissions.
-
-## Engineering Goals
-
-TransitFlow is designed around several principles:
-
-1. **Do not silently discard bad data**
-2. **Make pipeline reruns safe**
+1. **Do not silently discard bad or unusual data**
+2. **Make batch reruns safe**
 3. **Separate processing state from publication state**
 4. **Preserve record-level quality context**
 5. **Make cloud storage layouts predictable**
-6. **Detect incorrect metadata instead of assuming it is correct**
+6. **Verify metadata instead of assuming it is correct**
 7. **Make pipeline outputs independently verifiable**
-8. **Test failure-prone control logic without requiring live cloud calls**
+8. **Test failure-prone control logic without requiring live cloud access**
 
 ---
 
-## Author
+# Planned Improvements
+
+Potential future improvements include:
+
+- richer pipeline observability
+- automated Athena reconciliation jobs
+- performance benchmarking
+- stricter least-privilege AWS permissions
+- Dockerized execution
+- infrastructure-as-code
+- scheduled orchestration
+- automated alerting
+- optional Apache Iceberg extension
+- optional streaming architecture
+- additional integration tests
+
+---
+
+# Author
 
 **Usman Ahmadu Shuaibu**
 
@@ -582,36 +768,47 @@ Data Engineer
 
 GitHub: [TheOrthman](https://github.com/TheOrthman)
 
+Live project: [TransitFlow](https://transitflowz.streamlit.app/)
+
 ---
 
-## Project Status
+# Project Status
 
-**Active Development**
-
-Current milestone:
+**Active Development — Core Platform Complete**
 
 ```text
-✅ Local PySpark pipeline
-✅ Schema validation
-✅ Data-quality framework
-✅ Quarantine architecture
-✅ Batch metrics
+✅ Local PySpark batch pipeline
 ✅ Source download resilience
+✅ Schema validation
+✅ Canonical schema normalization
+✅ Data-quality framework
+✅ Warning classification
+✅ Quarantine architecture
+✅ Batch quality metrics
+✅ SHA-256 source verification
 ✅ Processing idempotency
 ✅ S3 publication
 ✅ S3 publication verification
 ✅ Hive-partitioned curated layer
 ✅ AWS Glue catalog integration
-✅ Glue partition repair
+✅ Glue partition validation and repair
 ✅ Amazon Athena querying
 ✅ Jan–Aug 2025 reconciliation
-✅ Unit testing — 28 passing tests
-✅ Git/GitHub repository
-✅ Integration tests
-✅ Continuous Integration
-✅ Recruiter-facing live application
+✅ 35 automated tests
+✅ Spark integration testing
+✅ GitHub Actions CI
+✅ Architecture documentation
+✅ Architecture Decision Records
+✅ Recruiter-facing Streamlit application
 ✅ Public deployment
 ```
 
+---
 
+## Links
 
+**Live Demo:**  
+[https://transitflowz.streamlit.app/](https://transitflowz.streamlit.app/)
+
+**GitHub Repository:**  
+[https://github.com/TheOrthman/transitflow](https://github.com/TheOrthman/transitflow)
