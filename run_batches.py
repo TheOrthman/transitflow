@@ -43,7 +43,7 @@ S3Storage = import_module("src.storage.s3_storage").S3Storage
 ENABLE_S3_PUBLISH = True
 ENABLE_GLUE_REGISTRATION = True
 
-AWS_PROFILE = "transitflow"
+AWS_PROFILE = "transitflow-lp"
 AWS_REGION = "eu-west-1"
 
 S3_BUCKET = "transitflow-data-1789925359"
