@@ -1,6 +1,17 @@
 import pandas as pd
 import streamlit as st
+from pathlib import Path
 
+ARCHITECTURE_IMAGE = Path("docs/architecture/transitflow_architecture.png")
+
+if ARCHITECTURE_IMAGE.exists():
+    st.image(
+        str(ARCHITECTURE_IMAGE),
+        caption="TransitFlow end-to-end data engineering architecture",
+        use_container_width=True,
+    )
+else:
+    st.info("Architecture diagram will appear here once the image is added.")
 
 st.set_page_config(
     page_title="TransitFlow",
