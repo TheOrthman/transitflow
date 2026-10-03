@@ -76,6 +76,7 @@ It demonstrates:
 ---
 
 # Architecture
+![TransitFlow Architecture](docs/architecture/transitflow_architecture.png)
 
 ```mermaid
 flowchart LR
