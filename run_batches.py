@@ -23,10 +23,12 @@ from src.common.config import BatchConfig
 from src.common.run_context import (
     calculate_file_checksum,
     generate_run_id,
+    get_processed_counts,
     successful_batch_exists,
     utc_now,
     write_run_record,
 )
+from src.reconciliation.athena_reconciler import AthenaReconciler
 from src.ingestion.tlc_downloader import download_tlc_file
 from src.pipeline.batch_pipeline import run_batch_pipeline
 batch_publisher = import_module("src.storage.batch_publisher")
@@ -42,6 +44,7 @@ S3Storage = import_module("src.storage.s3_storage").S3Storage
 
 ENABLE_S3_PUBLISH = True
 ENABLE_GLUE_REGISTRATION = True
+ENABLE_ATHENA_RECONCILIATION = True
 
 AWS_PROFILE = "transitflow-lp"
 AWS_REGION = "eu-west-1"
@@ -50,6 +53,7 @@ S3_BUCKET = "transitflow-data-1789925359"
 
 GLUE_DATABASE = "transitflow"
 GLUE_TABLE = "curated_yellow_taxi"
+ATHENA_OUTPUT_LOCATION = "s3://transitflow-data-1789925359/athena-results/"
 
 
 BATCHES = [
@@ -104,6 +108,56 @@ def build_glue_catalog() -> GlueCatalogType | None:
     )
 
 
+def build_athena_reconciler() -> AthenaReconciler | None:
+    if not (ENABLE_S3_PUBLISH and ENABLE_GLUE_REGISTRATION
+            and ENABLE_ATHENA_RECONCILIATION):
+        return None
+    return AthenaReconciler(
+        database=GLUE_DATABASE,
+        table=GLUE_TABLE,
+        output_location=ATHENA_OUTPUT_LOCATION,
+        profile_name=AWS_PROFILE,
+        region_name=AWS_REGION,
+    )
+
+
+def reconcile_batch(
+    reconciler: AthenaReconciler | None,
+    config: BatchConfig,
+    run_record: dict[str, Any],
+) -> None:
+    """Persist the comparison before raising on mismatch or query failure."""
+    if reconciler is None or run_record.get("glue_partition_status") not in {
+        "CREATED", "EXISTS"
+    }:
+        run_record["reconciliation_status"] = "DISABLED"
+        return
+    try:
+        if "valid_records" not in run_record:
+            run_record.update(get_processed_counts(
+                config.batch_id, run_record["source_checksum"]
+            ))
+        result = reconciler.reconcile_partition(
+            year=config.year,
+            month=config.month,
+            expected_records=(run_record["valid_records"]
+                              + run_record["warning_records"]),
+        )
+        run_record.update(result)
+        if result["reconciliation_status"] not in {"MATCH", "MISMATCH"}:
+            raise RuntimeError("Unexpected Athena reconciliation status")
+    except Exception:
+        run_record["reconciliation_status"] = "FAILED"
+        raise
+    if result["reconciliation_status"] == "MISMATCH":
+        raise RuntimeError(
+            f"Athena reconciliation MISMATCH for {config.batch_id}: "
+            f"expected {result['expected_records']}, "
+            f"found {result['athena_records']}"
+        )
+    print(f"Athena reconciliation: MATCH ({result['athena_records']} records)")
+
+
 def ensure_glue_partition(
     catalog: GlueCatalogType | None,
     config: BatchConfig,
@@ -147,6 +201,7 @@ def process_batch(
     config: BatchConfig,
     storage: S3StorageType | None,
     catalog: GlueCatalogType | None,
+    reconciler: AthenaReconciler | None = None,
 ) -> None:
     run_id = generate_run_id()
     started_at = utc_now()
@@ -169,6 +224,8 @@ def process_batch(
         "schema_version": config.schema_version,
         "started_at": started_at,
         "status": "STARTED",
+        "reconciliation_status": "NOT_RUN",
+        "athena_reconciliation_enabled": reconciler is not None,
         "s3_publish_enabled": ENABLE_S3_PUBLISH,
         "glue_registration_enabled": ENABLE_GLUE_REGISTRATION,
     }
@@ -221,6 +278,8 @@ def process_batch(
             print("Batch already processed successfully.")
             print("Skipping Spark processing.")
 
+            run_record["processing_status"] = "SKIPPED_ALREADY_PROCESSED"
+
             # -------------------------------------------------------
             # 3a. S3 disabled
             # -------------------------------------------------------
@@ -271,67 +330,28 @@ def process_batch(
             # 3c. Check Glue independently
             # -------------------------------------------------------
 
+            run_record["s3_publish_status"] = s3_status
+            run_record["s3_bucket"] = storage.bucket
+
             glue_status = ensure_glue_partition(
                 catalog=catalog,
                 config=config,
             )
 
-            # -------------------------------------------------------
-            # 3d. Record only if reconciliation changed something
-            # -------------------------------------------------------
-
-            if (
-                s3_status == "BACKFILLED"
-                or glue_status == "CREATED"
-            ):
-                reconciliation_record = {
-                    "run_id": run_id,
-                    "batch_id": config.batch_id,
-                    "dataset": config.dataset,
-                    "period": config.period,
-                    "source_file": config.source_file,
-                    "source_path": str(source_path),
-                    "source_checksum": source_checksum,
-                    "schema_version": config.schema_version,
-                    "started_at": started_at,
-                    "completed_at": utc_now(),
-                    "status": "SUCCESS",
-                    "processing_status": (
-                        "SKIPPED_ALREADY_PROCESSED"
-                    ),
-                    "s3_publish_enabled": (
-                        ENABLE_S3_PUBLISH
-                    ),
-                    "s3_publish_status": s3_status,
-                    "s3_bucket": storage.bucket,
-                    "glue_registration_enabled": (
-                        ENABLE_GLUE_REGISTRATION
-                    ),
-                    "glue_partition_status": glue_status,
-                }
-
-                if publish_summary is not None:
-                    reconciliation_record[
-                        "s3_curated_object_count"
-                    ] = publish_summary[
-                        "curated_object_count"
-                    ]
-
-                    reconciliation_record[
-                        "s3_quarantine_object_count"
-                    ] = publish_summary[
-                        "quarantine_object_count"
-                    ]
-
-                    reconciliation_record[
-                        "s3_quality_object_count"
-                    ] = publish_summary[
-                        "quality_object_count"
-                    ]
-
-                write_run_record(
-                    reconciliation_record
-                )
+            run_record.update(
+                s3_publish_status=s3_status,
+                s3_bucket=storage.bucket,
+                glue_partition_status=glue_status,
+            )
+            if publish_summary is not None:
+                for key in ("curated_object_count", "quarantine_object_count",
+                            "quality_object_count"):
+                    run_record[f"s3_{key}"] = publish_summary[key]
+            reconcile_batch(reconciler, config, run_record)
+            if (s3_status == "BACKFILLED" or glue_status == "CREATED"
+                    or run_record["reconciliation_status"] == "MATCH"):
+                run_record.update(status="SUCCESS", completed_at=utc_now())
+                write_run_record(run_record)
 
             return
 
@@ -424,8 +444,10 @@ def process_batch(
             ] = "DISABLED"
 
         # -----------------------------------------------------------
-        # 7. Mark complete
+        # 7. Reconcile after Glue registration, then mark complete
         # -----------------------------------------------------------
+
+        reconcile_batch(reconciler, config, run_record)
 
         run_record["status"] = "SUCCESS"
         run_record["completed_at"] = utc_now()
@@ -478,6 +500,7 @@ def main() -> None:
 
     storage = build_s3_storage()
     catalog = build_glue_catalog()
+    reconciler = build_athena_reconciler()
 
     spark_session = import_module("pyspark.sql").SparkSession
     spark = (
@@ -493,6 +516,7 @@ def main() -> None:
                 config=config,
                 storage=storage,
                 catalog=catalog,
+                reconciler=reconciler,
             )
 
     finally:

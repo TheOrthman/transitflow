@@ -71,7 +71,7 @@ def successful_batch_exists(
 ) -> bool:
     """
     Return True when the same logical batch and source
-    checksum have already completed successfully.
+    checksum have completed processing, including Athena-only failures.
     """
     if not RUN_LEDGER_PATH.exists():
         return False
@@ -90,8 +90,38 @@ def successful_batch_exists(
                 record.get("batch_id") == batch_id
                 and record.get("source_checksum")
                 == source_checksum
-                and record.get("status") == "SUCCESS"
+                and _processing_completed(record)
             ):
                 return True
 
     return False
+
+
+def _processing_completed(record: dict[str, Any]) -> bool:
+    # A downstream Athena failure must not invalidate completed Spark outputs.
+    return record.get("status") == "SUCCESS" or (
+        record.get("processing_status") in {"SUCCESS", "SKIPPED_ALREADY_PROCESSED"}
+        and record.get("reconciliation_status") in {"MISMATCH", "FAILED"}
+    )
+
+
+def get_processed_counts(batch_id: str, source_checksum: str) -> dict[str, int]:
+    """Recover original Spark counts, ignoring count-less backfill records."""
+    counts = None
+    if RUN_LEDGER_PATH.exists():
+        with RUN_LEDGER_PATH.open(encoding="utf-8") as ledger:
+            for line in ledger:
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                if (record.get("batch_id") == batch_id
+                        and record.get("source_checksum") == source_checksum
+                        and _processing_completed(record)
+                        and "valid_records" in record
+                        and "warning_records" in record):
+                    counts = {key: record[key] for key in (
+                        "rows_read", "valid_records", "warning_records",
+                        "quarantined_records") if key in record}
+    if counts is None:
+        raise RuntimeError(f"No processed counts in run ledger for {batch_id}")
+    return counts

@@ -645,6 +645,12 @@ python -m pip install -r requirements.txt
 ```bash
 python -m pytest tests/unit tests/integration -v
 ```
+## Run with Docker
+
+Build the public demo image:
+
+```bash
+docker build -t transitflow-demo .
 
 ## 5. Run the Streamlit demo
 
@@ -694,6 +700,9 @@ The public Streamlit application is read-only and does not expose:
 - IAM configuration
 - private infrastructure controls
 
+TransitFlow uses a dedicated AWS IAM Identity Center permission set
+scoped to the S3 and Glue actions required by the pipeline instead of
+AdministratorAccess for normal pipeline execution.
 ---
 
 # Architecture Decisions
@@ -743,15 +752,13 @@ TransitFlow is built around several principles:
 
 ---
 
-# Planned Improvements
+## Planned Improvements
 
 Potential future improvements include:
 
 - richer pipeline observability
 - automated Athena reconciliation jobs
 - performance benchmarking
-- stricter least-privilege AWS permissions
-- Dockerized execution
 - infrastructure-as-code
 - scheduled orchestration
 - automated alerting
